@@ -7,7 +7,7 @@
 // ---------- 远程 API 配置（Cloudflare 部署时启用） ----------
 const DATA_SOURCE = 'api';            // 'local' 本地存储 | 'api' 云端接口
 const API_BASE_URL = '';              // 同域部署留空（相对路径 /api/nav）
-const API_ADMIN_KEY = 'NavHub@2026!'; // 保存接口密钥，必须与 Cloudflare 环境变量 ADMIN_KEY 一致
+const API_ADMIN_KEY = 'feige666'; // 保存接口密钥，必须与 Cloudflare 环境变量 ADMIN_KEY 一致
 
 // ---------- 默认配置（首次使用/重置时写入） ----------
 const DEFAULT_SETTINGS = {
