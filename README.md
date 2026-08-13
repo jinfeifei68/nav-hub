@@ -28,6 +28,32 @@ GitHub 仓库（代码源 + 版本管理，随时回滚）
 数据流说明：访客打开首页 → `app.js` 通过 `GET /api/nav` 拉取云端配置 → 渲染。管理员在后台保存 → `PUT /api/nav` 写回 KV → 其他访客刷新即可看到新配置。
 
 ---
+
+## 2. 方案选型对比
+
+| 方案 | 组成 | 优点 | 缺点 | 结论 |
+|------|------|------|------|------|
+| **A. Pages + Functions + KV** | Pages 托管静态，`functions/api/nav.js` 自动成为 `/api/nav` 接口，KV 存数据 | 一个平台全搞定；静态与 API **同域**（无跨域）；免费 | 无 | ✅ **推荐，用这个** |
+| B. Pages + 独立 Workers + KV | 静态与 API 分两个服务 | 动静分离、API 可独立扩展 | 需配路由/自定义域名；有 CORS 处理 | 流量大了再升级 |
+| C. 全 Workers | 一个 Worker 同时返回静态与 API | 最简、单文件 | 静态缓存要手动配置 | 极简主义者 |
+
+本指南按**方案 A** 编写。
+
+---
+
+## 3. 数据存储选型：KV vs D1
+
+| 维度 | KV | D1（SQLite） |
+|------|-----|-------------|
+| 适用场景 | 简单键值、读多写少 | 多用户、复杂查询、事务 |
+| 本项目契合度 | ✅ 一份配置 JSON，管理员偶尔写、访客大量读 | 杀鸡用牛刀 |
+| 免费额度 | 10 万读/天、1000 写/天、1GB 存储 | 5GB 数据库、500 万行读/天 |
+| 升级路径 | — | 以后做多用户/评论/统计时迁移 |
+
+**结论：当前用 KV 即可。** KV 免费额度对个人导航站完全用不完。
+
+---
+
 ## 4. 部署步骤
 
 ### 第 1 步：代码推到 GitHub
@@ -66,16 +92,38 @@ GitHub 仓库（代码源 + 版本管理，随时回滚）
 
 ```js
 // functions/api/nav.js —— GET 读配置 / PUT 写配置
-// 前置：Pages 项目绑定 KV 命名空间（变量名 NAV_DATA），可选环境变量 ADMIN_KEY
+// 前置：Pages 项目绑定 KV 命名空间（变量名 NAV_DATA），环境变量 ADMIN_KEY
+//
+// 安全设计（前端零密码）：
+//   - 前端代码不含任何密码明文
+//   - 管理员登录后台时输入的密码作为 x-admin-key 请求头发出
+//   - 本接口对照环境变量 ADMIN_KEY 校验（密码只存在 Cloudflare 控制台）
+//   - GET：带 key 且正确 → 200（认证通过）；带 key 错误 → 401；不带 key → 放行（访客读取）
+//   - PUT：必须带正确 key，否则 401
 
 const KV_KEY = 'nav_data';
 
 export async function onRequestGet(context) {
-    const { env } = context;
+    const { env, request } = context;
+
+    // 可选校验：请求带 x-admin-key 头时进行校验（后台登录验证用）
+    const adminKey = env.ADMIN_KEY;
+    const provided = request.headers.get('x-admin-key');
+    if (provided && adminKey && provided !== adminKey) {
+        return json({ ok: false, error: '未授权' }, 401);
+    }
+    // 是否携带了正确的管理密钥（用于区分"管理员"与"访客"）
+    const authed = !!(provided && adminKey && provided === adminKey);
+
     try {
         const raw = await env.NAV_DATA.get(KV_KEY);
         if (!raw) {
-            // 首次部署未初始化数据 → 返回 404，前端自动回退默认配置
+            // 数据未初始化：
+            //  - 管理员（key 正确）→ 返回 200，表示认证通过、数据待初始化
+            //  - 访客 → 返回 404，前端自动回退默认配置
+            if (authed) {
+                return json({ ok: true, data: null, initialized: false });
+            }
             return json({ ok: false, error: '数据未初始化，请先在后台保存一次' }, 404);
         }
         return json(JSON.parse(raw));
@@ -122,15 +170,21 @@ const DATA_SOURCE = 'api';        // 'local' → 'api'
 const API_BASE_URL = '';          // 同域部署留空即可（相对路径 /api/nav）
 ```
 
-**`apiSave()` 加密钥头（可选但建议）：**
+**密钥零硬编码（前端不含任何密码）：** 密码不写在代码里。管理员登录后台时输入的密码存入 `sessionStorage('navhub_admin_key')`（仅浏览器会话内存），保存时自动作为密钥带上：
 
 ```js
+// data.js 顶部：不声明 API_ADMIN_KEY，改为从会话读取
+function getAdminKey() {
+    try { return sessionStorage.getItem('navhub_admin_key') || ''; }
+    catch (e) { return ''; }
+}
+
 async function apiSave(data) {
     const res = await fetch(API_BASE_URL + '/api/nav', {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
-            'x-admin-key': API_ADMIN_KEY   // 与后端 ADMIN_KEY 保持一致
+            'x-admin-key': getAdminKey()   // 登录时输入的密码，云端对照 ADMIN_KEY 校验
         },
         body: JSON.stringify(data)
     });
@@ -139,10 +193,9 @@ async function apiSave(data) {
 }
 ```
 
-在 `data.js` 顶部加一行常量：`const API_ADMIN_KEY = 'NavHub@2026!';`（与第 3 步 Cloudflare 环境变量 `ADMIN_KEY` 相同）。
+**后台登录改为云端验证（不再本地比对）：** `admin.js` 的登录函数把输入的密码存入 `sessionStorage('navhub_admin_key')`，并发带 `x-admin-key` 头的 GET 请求到 `/api/nav` 验证：200 → 登录成功；401 → 密码错误；网络失败 → 提示检查部署。
 
 **页面加载改为异步初始化：**
-
 - `app.js`（约 425 行）：`NavData.init();` → `NavData.initAsync();`（首屏拉取云端配置；失败自动回退本地默认，不白屏）
 - `admin.js`（约 866/871 行）：同样改用 `NavData.initAsync()`，且后台操作前 `await` 初始化完成
 
@@ -183,7 +236,7 @@ function save(data) {
 
 | 风险 | 说明 | 对策 |
 |------|------|------|
-| 后台密码形同虚设 | `admin123` 写在前端，任何访客可进后台改配置 | **依赖第 4 步的 ADMIN_KEY 鉴权**：无密钥的 PUT 一律 401，密码只能打开页面、改不了数据 |
+| 后台密码形同虚设 | 前端登录校验只是"防误入" | **真防护靠第 4 步的 ADMIN_KEY 鉴权**：无密钥的 PUT 一律 401；且前端已零硬编码，密码只存在 Cloudflare 控制台，下载代码也看不到 |
 | 接口被刷写 | 直接 `curl` 调 PUT 覆盖配置 | 上一条已覆盖 |
 | 敏感信息泄露 | 仓库是 Public 时，前端代码人人可见 | 密钥不要写得太简单；敏感数据不要放站点描述里 |
 
@@ -215,7 +268,7 @@ function save(data) {
 - 首次需完成第 6 步数据迁移
 
 **Q：后台保存报"API 保存失败: 401"？**
-`x-admin-key` 头与 Cloudflare 环境变量 `ADMIN_KEY` 不一致，或前端 `API_ADMIN_KEY` 未配置。
+后台登录时输入的密码与 Cloudflare 环境变量 `ADMIN_KEY` 不一致。登录框输入的密码就是密钥，必须与 `ADMIN_KEY` 完全相同。
 
 **Q：PUT 报 404？**
 `functions/api/nav.js` 路径写错。必须位于项目根 `functions/api/` 下，且已随最新提交部署。
