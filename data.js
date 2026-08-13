@@ -4,6 +4,11 @@
 // 存储策略：localStorage（默认）→ 可切换为远程 API（部署用）
 // ============================================================
 
+// ---------- 远程 API 配置（Cloudflare 部署时启用） ----------
+const DATA_SOURCE = 'api';            // 'local' 本地存储 | 'api' 云端接口
+const API_BASE_URL = '';              // 同域部署留空（相对路径 /api/nav）
+const API_ADMIN_KEY = 'NavHub@2026!'; // 保存接口密钥，必须与 Cloudflare 环境变量 ADMIN_KEY 一致
+
 // ---------- 默认配置（首次使用/重置时写入） ----------
 const DEFAULT_SETTINGS = {
     logoText: "NavHub",
@@ -288,9 +293,13 @@ const NavData = (function () {
     // ----- 保存（触发前端刷新） -----
     function save(newData) {
         state = newData || state;
-        saveToStorage(state);
+        saveToStorage(state);               // 本地始终保留一份（兜底）
         // 通知所有监听者刷新
         notifyChange();
+        // API 模式下：云端异步补写（失败不阻塞，下次保存自动重试）
+        if (DATA_SOURCE === 'api') {
+            apiSave(state).catch(e => console.warn('[NavData] 云端保存失败', e));
+        }
         return true;
     }
 
@@ -299,6 +308,9 @@ const NavData = (function () {
         state = getDefaultData();
         saveToStorage(state);
         notifyChange();
+        if (DATA_SOURCE === 'api') {
+            apiSave(state).catch(e => console.warn('[NavData] 云端保存失败', e));
+        }
         return state;
     }
 
@@ -353,8 +365,7 @@ const NavData = (function () {
     // 部署上线后，把 DATA_SOURCE 改为 'api'，并配置 API_BASE_URL。
     // 后端需实现：GET /api/nav 返回完整数据，PUT /api/nav 接收完整数据。
     // ============================================================
-    const DATA_SOURCE = 'local';          // 'local' | 'api'
-    const API_BASE_URL = '';              // 例如 'https://your-domain.com'
+    // DATA_SOURCE / API_BASE_URL / API_ADMIN_KEY 统一定义在文件顶部
 
     async function apiFetch() {
         const res = await fetch(API_BASE_URL + '/api/nav');
@@ -365,7 +376,10 @@ const NavData = (function () {
     async function apiSave(data) {
         const res = await fetch(API_BASE_URL + '/api/nav', {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'x-admin-key': API_ADMIN_KEY   // 与 Cloudflare 环境变量 ADMIN_KEY 一致
+            },
             body: JSON.stringify(data)
         });
         if (!res.ok) throw new Error('API 保存失败: ' + res.status);

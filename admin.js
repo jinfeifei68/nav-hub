@@ -863,24 +863,23 @@
     }
 
     function initAdmin() {
-        NavData.init();
         refreshAll();
     }
 
-    // ----- 启动流程 -----
-    NavData.init();
+    // ----- 启动流程（API 模式：先拉取云端配置，就绪后再初始化后台） -----
+    NavData.initAsync().then(() => {
+        // 同步后台自身的主题（亮/暗跟随主页存储）
+        const savedTheme = localStorage.getItem('navhub-theme');
+        if (savedTheme) {
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        }
 
-    // 同步后台自身的主题（亮/暗跟随主页存储）
-    const savedTheme = localStorage.getItem('navhub-theme');
-    if (savedTheme) {
-        document.documentElement.setAttribute('data-theme', savedTheme);
-    }
-
-    if (isAuthed()) {
-        loginOverlay.style.display = 'none';
-        adminShell.style.display = 'flex';
-        initAdmin();
-    } else {
-        setTimeout(() => loginPassword.focus(), 300);
-    }
+        if (isAuthed()) {
+            loginOverlay.style.display = 'none';
+            adminShell.style.display = 'flex';
+            initAdmin();
+        } else {
+            setTimeout(() => loginPassword.focus(), 300);
+        }
+    });
 })();

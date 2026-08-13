@@ -422,13 +422,14 @@
     // ============================================================
     // 初始化
     // ============================================================
-    NavData.init();
-
-    // 同步主题（需在 applySettings 之后执行）
-    initTheme();
-    applySettings();
-    renderCategoryBar();
-    renderCards();
-    updateClock();
-    setInterval(updateClock, 1000);
+    // API 模式：先异步拉取云端配置（失败自动回退本地数据），再渲染首屏
+    NavData.initAsync().then(() => {
+        // 同步主题（需在 applySettings 之后执行）
+        initTheme();
+        applySettings();
+        renderCategoryBar();
+        renderCards();
+        updateClock();
+        setInterval(updateClock, 1000);
+    });
 })();
