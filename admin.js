@@ -9,9 +9,9 @@
     // ============================================================
     // 常量
     // ============================================================
-    // ⚠️ 前端演示用密码（仅简单校验）。
-    // 正式部署时请改为后端 API 鉴权（见底部"部署说明"注释）。
-    const ADMIN_PASSWORD = 'admin123';
+    // ⚠️ 无前端硬编码密码：登录密码由用户输入，作为会话密钥交给
+    // 云端接口校验（对照 Cloudflare 环境变量 ADMIN_KEY），前端零密码。
+    // 安全说明：前端密码校验只是"防误入"，真正防护靠接口密钥校验。
 
     // ----- 登录元素 -----
     const loginOverlay = document.getElementById('loginOverlay');
@@ -77,21 +77,48 @@
         return sessionStorage.getItem('navhub_admin_authed') === '1';
     }
 
-    function doLogin() {
+    async function doLogin() {
         const pwd = loginPassword.value;
-        if (pwd === ADMIN_PASSWORD) {
-            sessionStorage.setItem('navhub_admin_authed', '1');
-            loginOverlay.classList.add('hidden');
-            setTimeout(() => { loginOverlay.style.display = 'none'; }, 400);
-            adminShell.style.display = 'flex';
-            initAdmin();
-            toast('欢迎回来，管理员 👋');
-        } else {
-            loginError.textContent = '密码错误，请重试';
-            loginPassword.value = '';
+        if (!pwd) {
+            loginError.textContent = '请输入密码';
             loginPassword.focus();
-            loginPassword.classList.add('shake');
-            setTimeout(() => loginPassword.classList.remove('shake'), 500);
+            return;
+        }
+        // 密码不写进代码：作为会话密钥交给云端接口验证（x-admin-key 头）
+        sessionStorage.setItem('navhub_admin_key', pwd);
+        loginError.textContent = '';
+        loginBtn.disabled = true;
+        loginBtn.textContent = '验证中…';
+        try {
+            const res = await fetch(API_BASE_URL + '/api/nav', {
+                headers: { 'x-admin-key': pwd }
+            });
+            if (res.ok) {
+                // 云端验证通过
+                sessionStorage.setItem('navhub_admin_authed', '1');
+                loginOverlay.classList.add('hidden');
+                setTimeout(() => { loginOverlay.style.display = 'none'; }, 400);
+                adminShell.style.display = 'flex';
+                initAdmin();
+                toast('欢迎回来，管理员 👋');
+            } else if (res.status === 401) {
+                sessionStorage.removeItem('navhub_admin_key');
+                loginError.textContent = '密码错误，请重试';
+                loginPassword.value = '';
+                loginPassword.focus();
+                loginPassword.classList.add('shake');
+                setTimeout(() => loginPassword.classList.remove('shake'), 500);
+            } else {
+                sessionStorage.removeItem('navhub_admin_key');
+                loginError.textContent = '云端接口异常（' + res.status + '），请稍后再试';
+            }
+        } catch (e) {
+            sessionStorage.removeItem('navhub_admin_key');
+            loginError.textContent = '无法连接云端接口，请检查网络或部署状态';
+            loginPassword.focus();
+        } finally {
+            loginBtn.disabled = false;
+            loginBtn.textContent = '登 录';
         }
     }
 
@@ -102,6 +129,7 @@
 
     logoutBtn.addEventListener('click', () => {
         sessionStorage.removeItem('navhub_admin_authed');
+        sessionStorage.removeItem('navhub_admin_key');
         location.reload();
     });
 

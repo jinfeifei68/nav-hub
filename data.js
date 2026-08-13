@@ -7,7 +7,15 @@
 // ---------- 远程 API 配置（Cloudflare 部署时启用） ----------
 const DATA_SOURCE = 'api';            // 'local' 本地存储 | 'api' 云端接口
 const API_BASE_URL = '';              // 同域部署留空（相对路径 /api/nav）
-const API_ADMIN_KEY = 'feige666'; // 保存接口密钥，必须与 Cloudflare 环境变量 ADMIN_KEY 一致
+// 密钥不硬编码：管理员登录后台时输入的密码存入 sessionStorage('navhub_admin_key')，
+// 保存时由 getAdminKey() 读出作为 x-admin-key 请求头 → 云端接口对照环境变量 ADMIN_KEY 校验。
+// 前端代码不含任何密码明文。
+
+// 读取当前会话的管理密钥（仅浏览器会话内存，不落盘、不写入代码）
+function getAdminKey() {
+    try { return sessionStorage.getItem('navhub_admin_key') || ''; }
+    catch (e) { return ''; }
+}
 
 // ---------- 默认配置（首次使用/重置时写入） ----------
 const DEFAULT_SETTINGS = {
@@ -365,7 +373,7 @@ const NavData = (function () {
     // 部署上线后，把 DATA_SOURCE 改为 'api'，并配置 API_BASE_URL。
     // 后端需实现：GET /api/nav 返回完整数据，PUT /api/nav 接收完整数据。
     // ============================================================
-    // DATA_SOURCE / API_BASE_URL / API_ADMIN_KEY 统一定义在文件顶部
+    // DATA_SOURCE / API_BASE_URL 统一定义在文件顶部；管理密钥由 getAdminKey() 从会话读取
 
     async function apiFetch() {
         const res = await fetch(API_BASE_URL + '/api/nav');
@@ -378,7 +386,7 @@ const NavData = (function () {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
-                'x-admin-key': API_ADMIN_KEY   // 与 Cloudflare 环境变量 ADMIN_KEY 一致
+                'x-admin-key': getAdminKey()   // 会话密钥，云端对照环境变量 ADMIN_KEY 校验
             },
             body: JSON.stringify(data)
         });
