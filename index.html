@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NavHub · 精选导航</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- 背景装饰层 -->
+    <div class="bg-decoration">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+        <div class="grid-overlay"></div>
+    </div>
+
+    <!-- 顶部导航栏 -->
+    <header class="top-bar">
+        <div class="top-bar-inner">
+            <div class="logo">
+                <div class="logo-icon" id="logoIconBox">
+                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                        <rect x="2" y="2" width="10" height="10" rx="3" fill="url(#g1)"/>
+                        <rect x="16" y="2" width="10" height="10" rx="3" fill="url(#g2)" opacity="0.7"/>
+                        <rect x="2" y="16" width="10" height="10" rx="3" fill="url(#g3)" opacity="0.5"/>
+                        <rect x="16" y="16" width="10" height="10" rx="3" fill="url(#g4)" opacity="0.3"/>
+                        <defs>
+                            <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+                                <stop offset="0" stop-color="#6366f1"/>
+                                <stop offset="1" stop-color="#8b5cf6"/>
+                            </linearGradient>
+                            <linearGradient id="g2" x1="0" y1="0" x2="1" y2="1">
+                                <stop offset="0" stop-color="#8b5cf6"/>
+                                <stop offset="1" stop-color="#ec4899"/>
+                            </linearGradient>
+                            <linearGradient id="g3" x1="0" y1="0" x2="1" y2="1">
+                                <stop offset="0" stop-color="#06b6d4"/>
+                                <stop offset="1" stop-color="#6366f1"/>
+                            </linearGradient>
+                            <linearGradient id="g4" x1="0" y1="0" x2="1" y2="1">
+                                <stop offset="0" stop-color="#f59e0b"/>
+                                <stop offset="1" stop-color="#ec4899"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <span class="logo-text">NavHub</span>
+            </div>
+            <div class="top-bar-actions">
+                <button class="theme-toggle" id="themeToggle" aria-label="切换主题">
+                    <svg class="icon-sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"/>
+                        <line x1="12" y1="1" x2="12" y2="3"/>
+                        <line x1="12" y1="21" x2="12" y2="23"/>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                        <line x1="1" y1="12" x2="3" y2="12"/>
+                        <line x1="21" y1="12" x2="23" y2="12"/>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                    </svg>
+                    <svg class="icon-moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 顶部数字时钟（导航栏下方 · 实时秒跳） -->
+    <div class="clock-bar">
+        <div class="clock-inner">
+            <div class="clock-time" id="clockTime">--:--:--</div>
+            <div class="clock-date" id="clockDate">----年--月--日 星期-</div>
+        </div>
+    </div>
+
+    <!-- 搜索区域 -->
+    <section class="search-section">
+        <div class="search-container">
+            <h1 class="search-title">发现优质资源</h1>
+            <p class="search-subtitle">精选站点 · 即搜即达</p>
+            <div class="search-box">
+                <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"/>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input type="text" class="search-input" id="searchInput" placeholder="搜索网站名称或关键词...  (按 / 快速聚焦)" autocomplete="off">
+                <kbd class="search-kbd">/</kbd>
+                <button class="search-clear" id="searchClear" aria-label="清除搜索">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+            <!-- 搜索引擎快捷入口 -->
+            <div class="search-engines">
+                <button class="engine-btn active" data-engine="google">Google</button>
+                <button class="engine-btn" data-engine="bing">Bing</button>
+                <button class="engine-btn" data-engine="baidu">百度</button>
+                <button class="engine-btn" data-engine="github">GitHub</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- 分类筛选 -->
+    <nav class="category-bar" id="categoryBar">
+        <button class="category-chip active" data-category="all">全部</button>
+        <button class="category-chip" data-category="dev">开发工具</button>
+        <button class="category-chip" data-category="design">设计资源</button>
+        <button class="category-chip" data-category="ai">AI 智能</button>
+        <button class="category-chip" data-category="social">社交社区</button>
+        <button class="category-chip" data-category="media">影视娱乐</button>
+        <button class="category-chip" data-category="news">新闻资讯</button>
+        <button class="category-chip" data-category="learn">学习平台</button>
+        <button class="category-chip" data-category="tools">效率工具</button>
+    </nav>
+
+    <!-- 网站卡片区域 -->
+    <main class="cards-section" id="cardsSection">
+        <!-- 卡片由JS动态渲染 -->
+    </main>
+
+    <!-- 空状态 -->
+    <div class="empty-state" id="emptyState" style="display:none">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <p>没有找到匹配的网站</p>
+    </div>
+
+    <!-- 页脚（双击文字进入后台管理） -->
+    <footer class="footer">
+        <p id="footerText">NavHub &copy; 2026 · 精选导航 · 持续更新中</p>
+    </footer>
+
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

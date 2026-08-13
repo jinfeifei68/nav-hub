@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NavHub · 管理后台</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body class="admin-body">
+    <!-- 登录界面 -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-card">
+            <div class="login-logo">
+                <svg width="40" height="40" viewBox="0 0 28 28" fill="none">
+                    <rect x="2" y="2" width="10" height="10" rx="3" fill="#6366f1"/>
+                    <rect x="16" y="2" width="10" height="10" rx="3" fill="#8b5cf6" opacity="0.8"/>
+                    <rect x="2" y="16" width="10" height="10" rx="3" fill="#06b6d4" opacity="0.6"/>
+                    <rect x="16" y="16" width="10" height="10" rx="3" fill="#ec4899" opacity="0.5"/>
+                </svg>
+            </div>
+            <h2>管理后台登录</h2>
+            <p class="login-hint">请输入管理员密码</p>
+            <div class="login-form">
+                <input type="password" id="loginPassword" class="login-input" placeholder="管理员密码" autocomplete="current-password">
+                <button class="login-btn" id="loginBtn">登 录</button>
+                <p class="login-error" id="loginError"></p>
+            </div>
+            <a href="index.html" class="login-back">← 返回首页</a>
+        </div>
+    </div>
+
+    <!-- 后台主界面 -->
+    <div class="admin-shell" id="adminShell" style="display:none">
+        <!-- 顶栏 -->
+        <header class="admin-topbar">
+            <div class="admin-topbar-left">
+                <button class="admin-sidebar-toggle" id="sidebarToggle" aria-label="切换侧边栏">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <line x1="3" y1="6" x2="21" y2="6"/>
+                        <line x1="3" y1="12" x2="21" y2="12"/>
+                        <line x1="3" y1="18" x2="21" y2="18"/>
+                    </svg>
+                </button>
+                <span class="admin-title">🎛️ NavHub 管理后台</span>
+            </div>
+            <div class="admin-topbar-right">
+                <a href="index.html" class="admin-link-btn" target="_blank">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                        <polyline points="15 3 21 3 21 9"/>
+                        <line x1="10" y1="14" x2="21" y2="3"/>
+                    </svg>
+                    查看网站
+                </a>
+                <button class="admin-link-btn" id="logoutBtn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    退出
+                </button>
+            </div>
+        </header>
+
+        <div class="admin-layout">
+            <!-- 侧边导航 -->
+            <aside class="admin-sidebar" id="adminSidebar">
+                <nav class="admin-nav">
+                    <button class="admin-nav-item active" data-panel="sites">
+                        <span class="nav-icon">🔗</span> 站点管理
+                    </button>
+                    <button class="admin-nav-item" data-panel="categories">
+                        <span class="nav-icon">🗂️</span> 分类管理
+                    </button>
+                    <button class="admin-nav-item" data-panel="layout">
+                        <span class="nav-icon">📐</span> 布局排版
+                    </button>
+                    <button class="admin-nav-item" data-panel="background">
+                        <span class="nav-icon">🖼️</span> 背景设置
+                    </button>
+                    <button class="admin-nav-item" data-panel="colors">
+                        <span class="nav-icon">🎨</span> 颜色定制
+                    </button>
+                    <button class="admin-nav-item" data-panel="content">
+                        <span class="nav-icon">📝</span> 内容设置
+                    </button>
+                    <button class="admin-nav-item" data-panel="data">
+                        <span class="nav-icon">💾</span> 数据管理
+                    </button>
+                </nav>
+            </aside>
+
+            <!-- 主内容区 -->
+            <main class="admin-main">
+                <!-- ===== 站点管理 ===== -->
+                <section class="admin-panel active" id="panel-sites">
+                    <div class="panel-header">
+                        <div>
+                            <h2>站点管理</h2>
+                            <p>添加、编辑、删除导航站点，拖动卡片可调整顺序</p>
+                        </div>
+                        <button class="btn btn-primary" id="addSiteBtn">＋ 新增站点</button>
+                    </div>
+                    <div class="sites-toolbar">
+                        <select class="admin-select" id="siteFilter">
+                            <option value="all">全部分类</option>
+                        </select>
+                        <input type="text" class="admin-input" id="siteSearch" placeholder="搜索站点...">
+                    </div>
+                    <div class="site-manage-list" id="siteManageList"></div>
+                </section>
+
+                <!-- ===== 分类管理 ===== -->
+                <section class="admin-panel" id="panel-categories">
+                    <div class="panel-header">
+                        <div>
+                            <h2>分类管理</h2>
+                            <p>管理导航分类的名称、图标与排序</p>
+                        </div>
+                        <button class="btn btn-primary" id="addCategoryBtn">＋ 新增分类</button>
+                    </div>
+                    <div class="category-manage-list" id="categoryManageList"></div>
+                </section>
+
+                <!-- ===== 布局排版 ===== -->
+                <section class="admin-panel" id="panel-layout">
+                    <div class="panel-header">
+                        <div>
+                            <h2>布局排版</h2>
+                            <p>调整卡片大小、间距与显示样式，实时生效</p>
+                        </div>
+                    </div>
+                    <div class="settings-card">
+                        <div class="setting-row">
+                            <div class="setting-label">
+                                <span>卡片最小宽度</span>
+                                <small>控制每行显示的卡片数量</small>
+                            </div>
+                            <div class="setting-control">
+                                <input type="range" id="setting-gridMinWidth" min="120" max="320" step="10">
+                                <span class="setting-value" id="value-gridMinWidth">200px</span>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-label">
+                                <span>卡片间距</span>
+                                <small>卡片之间的空隙大小</small>
+                            </div>
+                            <div class="setting-control">
+                                <input type="range" id="setting-gridGap" min="4" max="40" step="2">
+                                <span class="setting-value" id="value-gridGap">16px</span>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-label">
+                                <span>卡片内边距</span>
+                                <small>卡片内容与边框的距离</small>
+                            </div>
+                            <div class="setting-control">
+                                <input type="range" id="setting-cardPadding" min="6" max="32" step="2">
+                                <span class="setting-value" id="value-cardPadding">16px</span>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-label">
+                                <span>卡片圆角</span>
+                                <small>卡片四角的圆润程度</small>
+                            </div>
+                            <div class="setting-control">
+                                <input type="range" id="setting-cardRadius" min="0" max="28" step="2">
+                                <span class="setting-value" id="value-cardRadius">14px</span>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-label">
+                                <span>卡片最小高度</span>
+                                <small>0 为自动；数值越大卡片越高</small>
+                            </div>
+                            <div class="setting-control">
+                                <input type="range" id="setting-cardMinHeight" min="0" max="220" step="10">
+                                <span class="setting-value" id="value-cardMinHeight">自动</span>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-label">
+                                <span>卡片透明度</span>
+                                <small>数值越低越通透，可透出背景图</small>
+                            </div>
+                            <div class="setting-control">
+                                <input type="range" id="setting-cardOpacity" min="20" max="100" step="5">
+                                <span class="setting-value" id="value-cardOpacity">100%</span>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-label">
+                                <span>显示站点描述</span>
+                                <small>是否在卡片上显示描述文字</small>
+                            </div>
+                            <div class="setting-control">
+                                <label class="switch">
+                                    <input type="checkbox" id="setting-showDesc" checked>
+                                    <span class="switch-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="settings-actions">
+                        <button class="btn btn-primary" id="saveLayoutBtn">💾 保存布局设置</button>
+                    </div>
+                </section>
+
+                <!-- ===== 背景设置 ===== -->
+                <section class="admin-panel" id="panel-background">
+                    <div class="panel-header">
+                        <div>
+                            <h2>背景设置</h2>
+                            <p>为网站设置背景图片，自动叠加遮罩保证文字清晰可读</p>
+                        </div>
+                    </div>
+                    <div class="settings-card">
+                        <div class="setting-row">
+                            <div class="setting-label">
+                                <span>启用背景图片</span>
+                                <small>开启后显示下方配置的背景图</small>
+                            </div>
+                            <div class="setting-control">
+                                <label class="switch">
+                                    <input type="checkbox" id="setting-bgEnabled">
+                                    <span class="switch-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-label">
+                                <span>背景图片地址</span>
+                                <small>支持 https 图片链接（建议 ≥1920×1080）</small>
+                            </div>
+                            <div class="setting-control setting-control-url">
+                                <input type="text" class="admin-input" id="setting-bgUrl" placeholder="https://example.com/bg.jpg">
+                                <button class="btn btn-secondary btn-sm" id="bgPreviewBtn">预览</button>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-label">
+                                <span>背景图不透明度</span>
+                                <small>图片的清晰程度，越低越朦胧</small>
+                            </div>
+                            <div class="setting-control">
+                                <input type="range" id="setting-bgOpacity" min="20" max="100" step="5">
+                                <span class="setting-value" id="value-bgOpacity">90%</span>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-label">
+                                <span>背景图模糊</span>
+                                <small>适当模糊可让前景文字更突出</small>
+                            </div>
+                            <div class="setting-control">
+                                <input type="range" id="setting-bgBlur" min="0" max="30" step="2">
+                                <span class="setting-value" id="value-bgBlur">0px</span>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-label">
+                                <span>遮罩强度</span>
+                                <small>越大背景越淡，文字对比度越高</small>
+                            </div>
+                            <div class="setting-control">
+                                <input type="range" id="setting-bgOverlay" min="0" max="80" step="5">
+                                <span class="setting-value" id="value-bgOverlay">55%</span>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-label">
+                                <span>遮罩颜色</span>
+                                <small>留空则自动跟随主题背景色（推荐）</small>
+                            </div>
+                            <div class="setting-control">
+                                <input type="color" id="setting-bgOverlayColor" value="#000000">
+                                <button class="btn btn-secondary btn-sm" id="bgOverlayClearBtn">清除（跟随主题）</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="settings-card">
+                        <div class="setting-label" style="margin-bottom:12px">
+                            <span>背景实时预览</span>
+                            <small>上方参数调整即时生效</small>
+                        </div>
+                        <div class="bg-preview-box" id="bgPreviewBox">
+                            <div class="bg-preview-text" id="bgPreviewText">
+                                示例文字<br><small>输入图片地址后点击"预览"</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="settings-actions">
+                        <button class="btn btn-primary" id="saveBgBtn">💾 保存背景设置</button>
+                        <button class="btn btn-secondary" id="bgClearBtn">🗑️ 清除背景图</button>
+                    </div>
+                </section>
+
+                <!-- ===== 颜色定制 ===== -->
+                <section class="admin-panel" id="panel-colors">
+                    <div class="panel-header">
+                        <div>
+                            <h2>颜色定制</h2>
+                            <p>自定义网站主题色与背景光斑颜色</p>
+                        </div>
+                    </div>
+                    <div class="settings-card">
+                        <div class="setting-row">
+                            <div class="setting-label">
+                                <span>主色调</span>
+                                <small>标题、按钮、选中状态的颜色</small>
+                            </div>
+                            <div class="setting-control">
+                                <input type="color" id="setting-accentColor" value="#6366f1">
+                                <span class="setting-value" id="value-accentColor">#6366f1</span>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-label">
+                                <span>渐变辅色</span>
+                                <small>与主色调搭配的渐变颜色</small>
+                            </div>
+                            <div class="setting-control">
+                                <input type="color" id="setting-accentColor2" value="#8b5cf6">
+                                <span class="setting-value" id="value-accentColor2">#8b5cf6</span>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-label">
+                                <span>光斑颜色 1</span>
+                                <small>背景左上角光斑</small>
+                            </div>
+                            <div class="setting-control">
+                                <input type="color" id="setting-blobColor1" value="#6366f1">
+                                <span class="setting-value" id="value-blobColor1">#6366f1</span>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-label">
+                                <span>光斑颜色 2</span>
+                                <small>背景右上角光斑</small>
+                            </div>
+                            <div class="setting-control">
+                                <input type="color" id="setting-blobColor2" value="#ec4899">
+                                <span class="setting-value" id="value-blobColor2">#ec4899</span>
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-label">
+                                <span>光斑颜色 3</span>
+                                <small>背景底部光斑</small>
+                            </div>
+                            <div class="setting-control">
+                                <input type="color" id="setting-blobColor3" value="#06b6d4">
+                                <span class="setting-value" id="value-blobColor3">#06b6d4</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="settings-actions">
+                        <button class="btn btn-primary" id="saveColorBtn">💾 保存颜色设置</button>
+                    </div>
+                </section>
+
+                <!-- ===== 内容设置 ===== -->
+                <section class="admin-panel" id="panel-content">
+                    <div class="panel-header">
+                        <div>
+                            <h2>内容设置</h2>
+                            <p>修改网站标题、副标题与页脚文字</p>
+                        </div>
+                    </div>
+                    <div class="settings-card">
+                        <div class="setting-row">
+                            <div class="setting-label">
+                                <span>Logo 文字</span>
+                                <small>顶部导航栏品牌名称</small>
+                            </div>
+                            <div class="setting-control">
+                                <input type="text" class="admin-input" id="setting-logoText" placeholder="NavHub">
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-label">
+                                <span>Logo 图标</span>
+                                <small>默认图形 / Emoji / 图片链接，三种模式任选</small>
+                            </div>
+                            <div class="setting-control setting-control-logo">
+                                <select class="admin-select" id="setting-logoIconType">
+                                    <option value="default">默认图形</option>
+                                    <option value="emoji">Emoji 图标</option>
+                                    <option value="image">图片链接</option>
+                                </select>
+                                <input type="text" class="admin-input" id="setting-logoIconEmoji" placeholder="🚀" maxlength="4" style="display:none">
+                                <input type="text" class="admin-input" id="setting-logoIconImage" placeholder="https://.../logo.png" style="display:none">
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-label">
+                                <span>主标题</span>
+                                <small>搜索区域的大标题</small>
+                            </div>
+                            <div class="setting-control">
+                                <input type="text" class="admin-input" id="setting-siteTitle" placeholder="发现优质资源">
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-label">
+                                <span>副标题</span>
+                                <small>搜索区域的小标题</small>
+                            </div>
+                            <div class="setting-control">
+                                <input type="text" class="admin-input" id="setting-siteSubtitle" placeholder="精选站点 · 即搜即达">
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-label">
+                                <span>页脚文字</span>
+                                <small>页面底部的版权信息</small>
+                            </div>
+                            <div class="setting-control">
+                                <input type="text" class="admin-input" id="setting-footerText" placeholder="版权信息">
+                            </div>
+                        </div>
+                        <div class="setting-row">
+                            <div class="setting-label">
+                                <span>站点图标识别服务</span>
+                                <small>自动获取各站点真实 Logo 的服务源，可随时切换</small>
+                            </div>
+                            <div class="setting-control">
+                                <select class="admin-select" id="setting-faviconService"></select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="settings-actions">
+                        <button class="btn btn-primary" id="saveContentBtn">💾 保存内容设置</button>
+                    </div>
+                </section>
+
+                <!-- ===== 数据管理 ===== -->
+                <section class="admin-panel" id="panel-data">
+                    <div class="panel-header">
+                        <div>
+                            <h2>数据管理</h2>
+                            <p>备份、恢复或重置全部网站数据</p>
+                        </div>
+                    </div>
+                    <div class="data-card">
+                        <h3>💾 导出数据</h3>
+                        <p>将当前全部配置（站点、分类、布局、颜色、内容）导出为 JSON 文件备份</p>
+                        <button class="btn btn-primary" id="exportBtn">⬇️ 导出 JSON</button>
+                    </div>
+                    <div class="data-card">
+                        <h3>📥 导入数据</h3>
+                        <p>从备份文件恢复配置（将覆盖当前全部数据）</p>
+                        <input type="file" id="importFile" accept=".json" style="display:none">
+                        <button class="btn btn-secondary" id="importBtn">⬆️ 选择文件导入</button>
+                    </div>
+                    <div class="data-card data-card-danger">
+                        <h3>⚠️ 恢复默认</h3>
+                        <p>重置所有数据为初始默认状态（不可恢复，请先备份）</p>
+                        <button class="btn btn-danger" id="resetBtn">🗑️ 恢复默认数据</button>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- 站点编辑弹窗 -->
+    <div class="modal-overlay" id="siteModal" style="display:none">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="siteModalTitle">编辑站点</h3>
+                <button class="modal-close" id="siteModalClose">✕</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editSiteIndex">
+                <div class="form-group">
+                    <label>站点名称 *</label>
+                    <input type="text" class="admin-input" id="editSiteName" placeholder="例如：GitHub">
+                </div>
+                <div class="form-group">
+                    <label>链接地址 *</label>
+                    <input type="url" class="admin-input" id="editSiteUrl" placeholder="https://...">
+                </div>
+                <div class="form-group">
+                    <label>描述</label>
+                    <input type="text" class="admin-input" id="editSiteDesc" placeholder="一句话描述">
+                </div>
+                <div class="form-group">
+                    <label>所属分类</label>
+                    <select class="admin-select" id="editSiteCategory"></select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>图标颜色</label>
+                        <div class="color-input-wrap">
+                            <input type="color" id="editSiteColor" value="#6366f1">
+                            <input type="text" class="admin-input" id="editSiteColorText" placeholder="#6366f1" maxlength="9">
+                        </div>
+                        <small class="form-hint">作为 Logo 背景色 / 字母回退底色</small>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>自动识别 Logo</label>
+                        <label class="switch">
+                            <input type="checkbox" id="editSiteAutoIcon" checked>
+                            <span class="switch-slider"></span>
+                        </label>
+                        <small class="form-hint">开启后自动获取网站真实 Logo；关闭则使用下方文字图标</small>
+                    </div>
+                    <div class="form-group" id="editSiteIconGroup">
+                        <label>图标文字（1-2字符）</label>
+                        <input type="text" class="admin-input" id="editSiteIcon" placeholder="G" maxlength="2">
+                        <small class="form-hint">自动识别失败时回退为字母图标</small>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>图标预览</label>
+                    <div class="icon-preview" id="siteIconPreview"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="siteModalCancel">取消</button>
+                <button class="btn btn-primary" id="siteModalSave">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 分类编辑弹窗 -->
+    <div class="modal-overlay" id="categoryModal" style="display:none">
+        <div class="modal modal-sm">
+            <div class="modal-header">
+                <h3 id="categoryModalTitle">编辑分类</h3>
+                <button class="modal-close" id="categoryModalClose">✕</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editCategoryIndex">
+                <div class="form-group">
+                    <label>分类名称 *</label>
+                    <input type="text" class="admin-input" id="editCategoryName" placeholder="例如：开发工具">
+                </div>
+                <div class="form-group">
+                    <label>Emoji 图标</label>
+                    <input type="text" class="admin-input" id="editCategoryEmoji" placeholder="例如：🛠️" maxlength="4">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="categoryModalCancel">取消</button>
+                <button class="btn btn-primary" id="categoryModalSave">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 全局提示 -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="data.js"></script>
+    <script src="admin.js"></script>
+</body>
+</html>
